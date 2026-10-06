@@ -1,0 +1,172 @@
+---
+title: 'Sesión 16: Histogramas y Diagrama de Cajas y Bigotes'
+author: "David Nexticapan Cortes"
+date: "2025-02-11"
+output: html_document
+---
+
+Cargamos librerías
+```{r, message=FALSE, warning=FALSE}
+library(ggplot2)
+library(patchwork)# Trabaja de la mano con los graficos de ggplot2
+library(moments)
+```
+
+## **Histogramas**
+
+Para un conjunto de datos continuos, un histograma es esencialmente una estimación gráfica de la densidad correspondientes a la distribución de los datos $X_1,X_2,…,X_n$. Las funciones de densidad tienden a tener formas reconocibles en muchos casos. Por lo tanto, una estimación gráfica de una densidad debería proporcionar una buena pista sobre las distribuciones que podrían considerarse como modelos para los datos. 
+
+Generamos valores aleatorios que siguen una distribución $Gamma(\alpha = 2, \beta=1)$
+```{r}
+set.seed(123)
+valores<-rgamma(n=1000,shape=2,scale=1)
+datos_continuos<-data.frame(datos=valores)
+summary(datos_continuos)
+boxplot(valores)
+
+```
+
+Para construir un histograma, se divide el rango de valores cubiertos por los datos en k intervalos disjuntos adyacentes $[b_0,b_1),[b_1,b_2 ),…, [b_{k-1},b_k)$. Todos los intervalos deben tener el mismo ancho, denotado como $∆b=b_j-b_{j-1}$, lo que podría requerir descartar algunos valores $X_i$ extremadamente grandes o pequeños para evitar que el histograma tenga un aspecto poco manejable. 
+
+```{r}
+ggplot(data = datos_continuos,aes(x=datos))+
+  geom_histogram(fill="pink",color="black")
+
+```
+
+## **Reglas para calcular el número de bins**
+
+Se han sugerido varias reglas prácticas para elegir el número de intervalos $k$ por ejemplo:
+
+![](Reglas Bins.jpg)
+
+```{r}
+k_sturges<-nclass.Sturges(datos_continuos$datos)
+k_scott<-nclass.scott(datos_continuos$datos)
+k_FD<-nclass.FD(datos_continuos$datos)
+k_sturges;k_scott;k_FD
+
+g1<-ggplot(data = datos_continuos,aes(x=datos))+
+  geom_histogram(fill="pink",color="black",bins = k_sturges)+
+  labs(title = "Histograma Distribucion Gamma(2,1), regla de sturges")
+  
+
+g2<-ggplot(data = datos_continuos,aes(x=datos))+
+  geom_histogram(fill="pink",color="black",bins = k_scott)+
+  labs(title = "Histograma Distribucion Gamma(2,1), regla de scott")  
+  
+
+g3<-ggplot(data = datos_continuos,aes(x=datos))+
+  geom_histogram(fill="pink",color="black",bins = k_FD)+
+  labs(title = "Histograma Distribucion Gamma(2,1), regla de FD") 
+(g1|g2)/g3
+```
+
+Al mismo tiempo, se recomienda probar varios valores diferentes de $∆b$ y elegir el que produzca un histograma “suave”. Esto es claramente una cuestión subjetiva y representa el principal problema al usar histogramas. 
+
+## **Histogramas con base a la longitud del intervalo**
+
+Si $∆b$ es demasiado pequeño, el histograma tendrá una forma irregular debido a que las varianzas de los $h_j$ serán grandes. Si $∆b$ es demasiado grande, el histograma tendrá una forma “cuadrada” y se enmascarará la verdadera forma de la densidad subyacente, ya que los datos estarán sobreagrupados.
+
+```{r}
+g4<-ggplot(data = datos_continuos,aes(x=datos))+
+  geom_histogram(fill="pink",color="black",binwidth = .1)+
+  labs(title = "Histograma Distribucion Gamma(2,1), longitud 0.1")
+g5<-ggplot(data = datos_continuos,aes(x=datos))+
+  geom_histogram(fill="pink",color="black",binwidth = 3)+
+  labs(title = "Histograma Distribucion Gamma(2,1), longitud 3")
+(g4|g5)
+
+
+```
+
+# **Asimetría**
+
+La **asimetría** (o sesgo) es una medida que indica qué tan simétrica es la distribución de los datos con respecto a su media.
+
+Formalmente, decimos que una distribución de frecuencias es simétrica si la media $\bar{x}$ es igual a la mediana $\bar{M_e}$. Esto significa que, en cualquier otro caso, la distribución es asimétrica.
+
+Cuando $\bar{M_e} < \bar{x}$ decimos que la distribución es Asimétrica a la derecha, Asimétrica de cola derecha o que tiene Asimetría positiva.
+
+Cuando $\bar{M_e} > \bar{x}$ decimos que la distribución es Asimétrica a la izquierda, Asimétrica de cola izquierda o que tiene Asimetría Negativa.
+
+Trabajemos con una distribución normal para ejemplificar la asimetría de una distribución.
+```{r}
+# Salario de actuarios recien egresados
+valores_normales<-rnorm(n=10000,mean=15000,sd=3000)
+summary(valores_normales)
+```
+
+Trabajamos con una distribución Exponencial para ejemplificar la asimetría a la derecha.
+```{r}
+# Tiempos de Interarribo
+valores_exponenciales<-rexp(n=1000,rate = 1/10)
+summary(valores_exponenciales)
+```
+
+Trabajamos con una distribución Weibull con ciertos parámetros para ejemplificar la asimétrica a la izquierda
+```{r}
+valores_weibull<-rweibull(n=1000,shape=1.5,scale = 500)
+summary(valores_weibull)
+```
+
+El **coeficiente de asimetría** también conocido como el coeficiente de asimetría de Fisher-Pearson, se basa en el tercer momento central:
+
+$$
+\mu_3 = E[(X-\mu)^3]
+$$
+Se utiliza $\sigma^3$ para obtener la asimetría estandarizada.
+
+$$
+\frac{\mathbb{E}[(X - \mu)^3]}{\sigma^3} = \mathbb{E} \left[ \left( \frac{X - \mu}{\sigma} \right)^3 \right] = \frac{\mu_3}{\sigma^3}
+$$
+
+  1. Si $asimetría = 0$ entonces la distribución es simétrica.
+  2. Si $asimetría > 0$ entonces la distribución es asimétrica a la derecha.
+  3. Si $asimetría < 0$ entonces la distribución es asimétrica a la izquierda.
+  
+```{r}
+skewness(valores_normales) # Simetrica
+skewness(valores_exponenciales) # Asimetrica a la derecha
+skewness(valores_weibull) # Asimetrica a la derecha
+
+```
+
+# Curtosis
+
+La **curtosis** es una medida estadística que se utiliza para evaluar la forma de la distribución de un conjunto de datos y, específicamente, para medir cuán “afilada” o “achatada” es la distribución en comparación con una distribución normal. Indica la concentración de valores alrededor de la media y la presencia de valores extremos en la distribución de datos.
+
+![](curtosis.jpg)
+
+**Distribución leptocúrtica:** El coeficiente de curtosis es positivo para una distribución leptocúrtica. Presenta un elevado grado de concentración alrededor de los valores centrales de la variable.Las colas de la distribución son más pesadas, lo que significa que los valores extremos son más probables.
+
+**Distribución mesocúrtica:** Presenta un grado de concentración medio alrededor de los valores centrales de la variable (el mismo que presenta una distribución normal). Los valores extremos o atípicos son menos comunes en este tipo de distribución.La curtosis se aproxima a cero para una distribución mesocúrtica.
+
+**Distribución platicúrtica:** Presenta un reducido grado de concentración alrededor de los valores centrales de la variable y sus valores están más dispersos. Tienen una forma achatada con un pico más bajo en el centro y colas menos pronunciadas. El coeficiente de curtosis es negativo para una distribución platicúrtica.
+
+El cuarto momento central se usa para medir la curtosis, que refleja si las colas de una distribución son más pesadas o ligeras que una distribución normal.
+
+$$
+\mu_4 = E[(X-\mu)^4]
+$$
+Se utiliza $\sigma^4$ para obtener la curtosis estandarizada.
+
+$$
+\frac{\mathbb{E}[(X - \mu)^4]}{\sigma^4} = \mathbb{E} \left[ \left( \frac{X - \mu}{\sigma} \right)^4 \right] = \frac{\mu_4}{\sigma^4}
+$$
+![](type_curtosis.jpg)
+
+```{r}
+kurtosis(valores_normales)-3 # Mesocurtica
+kurtosis(valores_exponenciales)-3 # Leptocurtica
+kurtosis(valores_weibull)-3 # Leptocurtica
+```
+
+```{r}
+library(e1071)
+kurtosis(valores_normales,type = 2) # Mesocurtica
+kurtosis(valores_exponenciales,type = 2) # Leptocurtica
+kurtosis(valores_weibull,type = 2) # Leptocurtica
+
+```
+

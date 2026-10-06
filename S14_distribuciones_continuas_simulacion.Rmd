@@ -1,0 +1,312 @@
+---
+title: "Distribuciones Continuas"
+author: "David Nexticapan Cortes"
+date: "2025-01-26"
+output: html_document
+---
+
+## **Distribución Uniforme**
+
+**Problema 1:** Una aseguradora está analizando el tiempo que tarda en resolverse una reclamación de seguro. Se sabe que el tiempo de resolución sigue una distribución uniforme entre 3 y 6 meses. Queremos calcular la probabilidad de que una reclamación se resuelva en ciertos tiempos.
+
+¿Cuál es la probabilidad de que el tiempo de resolución sea exactamente 4 meses?
+```{r}
+dunif(x=4,min=3,max=6)
+```
+
+¿Cuál es la probabilidad de que el tiempo de resolución sea mayor que 5 meses?
+```{r}
+1-punif(5,3,6)#default
+punif(5,3,6,lower.tail = FALSE) #equivalencia, cola derecha
+```
+
+Simula 1000 tiempos de resolución de reclamaciones y grafica la distribución empírica junto con la distribución teórica.
+```{r}
+set.seed(123)
+tiempos_simulados<-runif(n=1000,min=3,max=6)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion Uniforme (3,6)",border="white",probability = T)
+
+#Agregamos la curva de densidad teorica
+curve(dunif(x=x,min=3,max=6),col="red",lwd=3,add=T)
+```
+
+**Problema 2 TAREA:** Un analista de un call center de seguros sabe que el tiempo de espera de un cliente en la línea antes de ser atendido se distribuye uniformemente entre 0 y 10 minutos.
+
+a) ¿Cuál es la probabilidad de que un cliente espere exactamente 3 minutos?
+```{r}
+dunif(3,0,10)
+```
+
+b) ¿Cuál es la probabilidad de que un cliente espere entre 2 y 7 minutos?
+```{r}
+punif(7,0,10) - punif(2,0,10)
+```
+
+c) ¿Cuál es el tiempo de espera máximo tal que el 75% de los clientes esperan ese tiempo o menos?
+```{r}
+qunif(.75,0,10)
+```
+
+d) Simula los tiempos de espera de 1000 clientes y grafica su distribución empírica.
+```{r}
+set.seed(123)
+tiempos_simulados<-runif(n=1000,min=0,max=10)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion Uniforme (0,10)",border="white",probability = T)
+
+#Agregamos la curva de densidad teorica
+curve(dunif(x=x,min=0,max=10),col="red",lwd=3,add=T)
+```
+
+
+## **Distribución Exponencial**
+
+**Problema 3:**  Un parque de diversiones tiene una montaña rusa en la que los clientes llegan con un intervalo de tiempo entre ellos que sigue una distribución exponencial, y el tiempo medio de llegada es de 10 segundos.
+
+¿Cuál es la probabilidad de que el tiempo entre la llegada de dos personas sea exactamente 5 segundos?
+```{r}
+dexp(5,.1)
+```
+
+¿Cuál es la probabilidad de que el tiempo entre la llegada de una persona sea menor a 3 segundos?
+```{r}
+pexp(3,.1)
+```
+
+Simula 1000 llegadas de personas al parque y grafica la distribución empírica de los tiempos de llegada junto con la distribución teórica exponencial.
+```{r}
+set.seed(42)
+tiempos_simulados<-rexp(n=1000,rate=.1)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion exponencial (lamda=1/10)",border="white",probability = T,breaks = 20)
+
+#Agregamos la curva de densidad teorica
+curve(dexp(x=x,rate=1/10),col="red",lwd=3,add=T)
+
+```
+
+**Problema 4 Tarea:** Una compañía de tecnología financiera estima que el tiempo de vida (en años) de un dispositivo de seguridad para transacciones bancarias sigue una distribución exponencial con una tasa de fallas de 0.2 por año.
+
+a) ¿Cuál es la probabilidad de que un dispositivo dure menos de 3 años?
+```{r}
+pexp(3, rate = 0.2)
+```
+
+b) ¿Cuál es la probabilidad de que un dispositivo dure más de 5 años?
+```{r}
+1 - pexp(5, rate = 0.2)
+```
+
+c) ¿Cuál es la vida útil esperada de un dispositivo?
+```{r}
+0.2^-1
+```
+
+d) ¿Cuál es el tiempo de vida tal que el 90% de los dispositivos fallen antes de ese tiempo?
+```{r}
+qexp(0.9, rate = 0.2)
+```
+
+## **Distribución Gamma**
+
+**Problema 5:** En una planta de producción, el tiempo que tarda en repararse una máquina sigue una distribución Gamma con parámetros 𝛼= 3 y 𝛽= 2, donde𝛼es el número de reparaciones y𝛽es el tiempo promedio por reparación (en horas).
+
+¿Cuál es la probabilidad de que el tiempo total de reparación sea menor a 5 horas?
+```{r}
+pgamma(q=5,shape=3,rate=1/2)
+```
+
+¿Cuál es la probabilidad de que el tiempo de reparación esté entre 4 y 6 horas?
+```{r}
+pgamma(q=6,shape=3,rate=.5)-pgamma(q=4,shape=3,scale=2)
+```
+
+Simula 1000 tiempos de reparación y grafica la distribución empírica junto con la distribución gamma teórica.
+```{r}
+set.seed(666)
+tiempos_simulados<-rgamma(n=1000,shape=3,rate=.5)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion Gamma (3,2)",border="white",probability = T,breaks = 20,ylim=c(0,.15))
+
+#Agregamos la curva de densidad teorica
+curve(dgamma(x=x,shape=3,rate=1/2),col="red",lwd=3,add=T)
+
+```
+
+**Problema 6 Tarea:** En una compañía de servicios al cliente, el tiempo de espera de los clientes en una fila sigue una distribución gamma con parámetros 𝛼= 5 y 𝛽= 1 donde 𝛼 representa el número de clientes que llegan en un intervalo de tiempo y 𝛽 es el tiempo promedio entre la llegada de dos clientes consecutivos (en minutos).
+
+¿Cuál es la probabilidad de que un cliente espere menos de 4 minutos en la fila?
+```{r}
+
+pgamma(q = 4, shape = 5, rate = 1/1)
+
+```
+
+¿Cuál es la probabilidad de que el tiempo de espera esté entre 3 y 7 minutos?
+```{r}
+pgamma(q=7,shape=5,rate=1/1) - pgamma(q=3,shape=5,rate=1/1)
+```
+
+Simula 1000 tiempos de espera y grafica la distribución empírica junto con la distribución gamma teórica.
+```{r}
+tiempos_simulados<-rgamma(n=1000,shape=5,rate=1/1)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion Gamma (5,1)",border="white",probability = T,breaks = 20,ylim=c(0,.15))
+
+#Agregamos la curva de densidad teorica
+curve(dgamma(x=x,shape=5,rate=1/1),col="red",lwd=3,add=T)
+
+
+```
+
+# **Distribución Weibull**
+
+Si 𝛼 < 1 la tasa de fallas es decreciente con el tiempo. Esto ocurre cuando los componentes tienen más probabilidad de fallar al inicio de su vida útil, y las fallas son menos frecuentes con el tiempo.
+
+Si 𝛼 = 1 la tasa de fallas es constante, lo que significa que las fallas son igualmente probables en cualquier momento. En este caso, la Weibull se reduce a una distribución esponencial.
+
+Si 𝛼 > 1 la tasa de fallas es creciente con el tiempo Esto implica que, cuando más tiempo pasa, mayor es la probabilidad de que un componente falle. Este es el caso del típico desgaste de los componentes.
+
+**Problema 7:** Se sabe que la duración de vida (en horas) de un componente electrónico sigue una distribución Weibull con parámetros 𝛼= 1.5 y 𝛽= 1000.
+
+¿Cuál es la probabilidad de que un componente dure menos de 800 horas?
+```{r}
+pweibull(q=800,shape = 1.5,scale = 1000)
+
+```
+
+Si se quiere que el 90% de los componentes dure más de cierto tiempo, ¿cuál es este tiempo?
+```{r}
+qweibull(p=.9,shape = 1.5,scale = 1000)
+```
+
+Simula 1000 valores de la duración de vida del componente y grafica la distribución empírica junto con la distribución teórica Weibull.
+```{r}
+set.seed(212)
+tiempos_simulados<-rweibull(n=10000,shape=1.5,scale=1000)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion Weibull (1.5,1000)",border="white",probability = T,breaks = 20)
+
+#Agregamos la curva de densidad teorica
+curve(dweibull(x=x,shape=1.5,scale=1000),col="red",lwd=3,add=T)
+```
+
+
+**Problema 8 Tarea:** El tiempo que tarda un cliente en ser atendido en un banco sigue una distribución Weibull con parámetros 𝛼 = 2.2 y 𝛽= 5.
+
+𝛼 = 2.2: Indica que la tasa de atención aumenta a medida que pasa el tiempo. Al principio es menos probable que un cliente sea atendido de inmediato.
+
+𝛽= 5: Esto indica que muchos clientes serán atendidos en tiempos cercanos a los 5 minutos, algunos pueden esperar menos o más tiempo. 
+
+¿Cuál es la probablidad de que un cliente sea atendido en menos de 4 minutos?
+```{r}
+pweibull(4,2.2,5)
+```
+
+¿Cuál es el tiempo promedio que tarda un cliente en ser atendido?
+```{r}
+5 * gamma(1 + 2.2^-1)
+```
+
+Simula 1000 tiempos de atención y grafica la distribución empírica junto con la distribución teórica Weibull.
+```{r}
+set.seed(212)
+tiempos_simulados<-rweibull(n=1000,shape=2.2,scale=5)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion Weibull (2.2,5)",border="white",probability = T,breaks = 20)
+
+#Agregamos la curva de densidad teorica
+curve(dweibull(x=x,shape=2.2,scale=5),col="red",lwd=3,add=T)
+```
+
+# **Distribución Normal**
+
+**Problema 9:** El tiempo que tarda un banco en procesar una solicitud de crédito sigue una distribución normal con una media de 20 minutos y una desviación estándar de 4 minutos. Resuelve este problema sin estandarizar la variable (trabaja directamente con los valores de la distribución original). Responde lo siguiente:
+
+1.	¿Cuál es la probabilidad de que un proceso de solicitud tarde más de 24 minutos?
+```{r}
+1 - pnorm(24, mean = 20, sd = 4)
+```
+
+2.	¿Cuál es la probabilidad de que el proceso de solicitud dure entre 18 y 22 minutos?
+```{r}
+pnorm(22, mean = 20, sd = 4) - pnorm(18, mean = 20, sd = 4)
+```
+
+Simula 1000 tiempos de solicitud de crédito y grafica la distribución empírica junto con la distribución teórica Normal.
+```{r}
+tiempos_simulados<-rnorm(n=1000,mean = 20, sd = 4)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion normal (20,4)",border="white",probability = T,breaks = 20)
+
+#Agregamos la curva de densidad teorica
+curve(dnorm(x=x,mean = 20, sd = 4),col="red",lwd=3,add=T)
+```
+
+**Problema 10 TAREA:** Un actuario de seguros de autos estima que el monto de las reclamaciones por colisión (en miles de USD) sigue una distribución Normal con una media de $7,500 y una desviación estándar de $1,500.
+
+Preguntas y Resolución:
+
+a) ¿Cuál es la probabilidad de que una reclamación aleatoria sea exactamente de $8,000?
+```{r}
+0
+```
+
+b) ¿Cuál es la probabilidad de que una reclamación sea inferior a $6,000?
+```{r}
+pnorm(6000, 7500, 1500)
+```
+
+c) ¿Cuál es la probabilidad de que una reclamación esté entre $7,000 y $9,000?
+```{r}
+pnorm(9000, 7500, 1500) - pnorm(7000, 7500, 1500)
+```
+
+d) ¿Qué monto de reclamación delimita el 95% de las reclamaciones más bajas?
+```{r}
+qnorm(.95, 7500, 1500)
+```
+
+# Distribución Log Normal
+
+**Problema 11:** Los ingresos anuales de una empresa siguen una distribución lognormal, con un valor medio de 10 millones de dólares y una desviación estándar de 2.5 millones en la escala logarítmica. 
+
+¿Cuál es la probabilidad de que los ingresos anuales de la empresa superen los 20 millones de dólares?
+```{r}
+1-plnorm(20, 10, 2.5)
+```
+
+¿Cuál es la probabilidad de que los ingresos anuales estén entre 12 y 15 millones de dólares?
+```{r}
+plnorm(15, 10, 2.5) - plnorm(12, 10, 2.5)
+```
+
+Simula 1000 ingresos anuales y grafica la distribución empírica junto con la distribución teórica Log-Normal.
+```{r}
+
+tiempos_simulados<-rlnorm(n=1000, meanlog=10, sdlog=2.5)
+head(tiempos_simulados)
+
+#Generamos el histograma de frecuencias
+hist(tiempos_simulados,col = "steelblue",main="Distribucion lognormal (10,2.5)",border="white",probability = T,breaks = 20)
+
+#Agregamos la curva de densidad teorica
+curve(dlnorm(x=x, meanlog=10, sdlog=2.5),col="red",lwd=3,add=T)
+```
