@@ -1,0 +1,1 @@
+Colección de algoritmos, pruebas estadísticas y modelos de programación lineal desarrollados en R y Python para la resolución de problemas actuariales, valuación financiera y optimización de recursos.
