@@ -1,0 +1,198 @@
+---
+title: "Practica 5, Metodo de Newton"
+author: "Lopez Jimenez Christian Jesus, Castrejon Lara Cristian Alejandro, Ballesteros Ojeda Maria Fernanda"
+date: "2026-02-18"
+output: html_document
+---
+Ejejrcicio 1
+Aplique el metodo de Newton para obtener hasta p3 para f(x)=-x^3 -cosx en [-1,0]
+```{r}
+# Metodo de Newton
+
+# Definir la funcion f(x^)
+fun<-function(x){
+    
+  return((-x^3)-cos(x))
+}
+
+# Definimos a la derivada de la funcion
+derivada<-function(x){
+  factor1<- -3*x^2
+  factor2<- sin(x)
+  return(factor1+factor2)
+}
+
+# Aproximacion inicial
+p_0<- -.5
+f_p0<-fun(p_0)
+df_p0<-derivada(p_0)
+
+# Declarar un margen de tolerancia
+tol<- 0.00001
+
+# Declaramos un contador
+contador<- 0
+
+cat("P:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+
+# Generamos un bucle para el proceso de iteracion
+while(contador<=2){
+  contador<- contador + 1
+  p_1<- p_0 - (f_p0 / df_p0)
+  f_p1<- fun(p_1)
+  p_0<- p_1
+  f_p0<-fun(p_0)
+  df_p0<-derivada(p_0)
+  cat("P:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+}
+
+```
+
+
+Ejercicio 2
+Aplique el metodo de Newton para obtener la solucion con una exactitud de 10^-4 como margen de tolerancia para x^3 - 2x^2 - 5 = 0 en el intervalo [1,4]
+
+```{r}
+# Metodo de Newton
+
+# Definir la funcion f(x^)
+fun<-function(x){
+  
+  return(x^3 - 2*x^2 -5)
+}
+
+# Definimos a la derivada de la funcion
+derivada<-function(x){
+  factor1<- 3*x^2
+  factor2<- -4*x
+  factor3<- 0
+  return(factor1+factor2+factor3)
+}
+
+# Aproximacion inicial
+p_0<-2.5
+f_p0<-fun(p_0)
+df_p0<-derivada(p_0)
+
+# Declarar un margen de tolerancia
+tol<- 10^(-4)
+
+# Declaramos un contador
+contador<- 1
+
+cat("Iteracion:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+
+# Generamos un bucle para el proceso de iteracion
+
+while(abs(f_p0)>tol){
+  contador<- contador + 1
+  p_1<-p_0 - (f_p0 / df_p0)
+  f_p1<- fun(p_1)
+  p_0<- p_1
+  f_p0<-fun(p_0)
+  df_p0<-derivada(p_0)
+  cat("Iteracion:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+}
+
+# Concluimos el ejercicio:
+x<- 2.690647 
+
+```
+Ejercicio 3
+Aplique el metodo de Newton para obtener la solucion con una exactitud de 0.00001 para e^x + 2^-x + 2cosx - 6 = 0 para 1 <= x <= 2
+```{r}
+# Metodo de Newton
+
+# Definir la funcion f(x^)
+fun<-function(x){
+  
+  return(exp(x) + 2^(-x) + 2*cos(x) - 6)
+}
+
+# Definimos a la derivada de la funcion
+derivada<-function(x){
+  factor1<- exp(x)
+  factor2<- -(2^(-x)) * log(2)
+  factor3<- -2*sin(x)
+  return(factor1+factor2+factor3)
+}
+
+# Aproximacion inicial
+p_0<-1
+f_p0<-fun(p_0)
+df_p0<-derivada(p_0)
+
+# Declarar un margen de tolerancia
+tol<- 0.00001
+
+# Declaramos un contador
+contador<- 1
+
+cat("Iteracion:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+
+# Generamos un bucle para el proceso de iteracion
+
+while(abs(f_p0)>tol){
+  contador<- contador + 1
+  p_1<-p_0 - (f_p0 / df_p0)
+  f_p1<- fun(p_1)
+  p_0<- p_1
+  f_p0<-fun(p_0)
+  df_p0<-derivada(p_0)
+  cat("Iteracion:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+}
+
+# Concluimos el ejercicio:
+x<- 1.829384 
+
+```
+
+
+Ejercicio 4
+Encuentre una aproximacion a 3^(1/2) a una exactitud de 10^(-4) usando el algoritmo de Newton
+```{r}
+# Metodo de Newton
+
+# Definir la funcion f(x^)
+fun<-function(x){
+  
+  return((x^2)-3)
+}
+
+# Definimos a la derivada de la funcion
+derivada<-function(x){
+  factor1<- 2*x
+  factor2<- 0
+  factor3<- 0
+  return(factor1+factor2+factor3)
+}
+
+# Aproximacion inicial
+p_0<-1
+f_p0<-fun(p_0)
+df_p0<-derivada(p_0)
+
+# Declarar un margen de tolerancia
+tol<- 10^(-4)
+
+# Declaramos un contador
+contador<- 1
+
+cat("Iteracion:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+
+# Generamos un bucle para el proceso de iteracion
+
+while(abs(f_p0)>tol){
+  contador<- contador + 1
+  p_1<-p_0 - (f_p0 / df_p0)
+  f_p1<- fun(p_1)
+  p_0<- p_1
+  f_p0<-fun(p_0)
+  df_p0<-derivada(p_0)
+  cat("Iteracion:",contador,"\t x",p_0, "\t |f(x)|",abs(f_p0),"\n")
+}
+
+# Concluimos el ejercicio:
+x<- 1.732051
+
+```
