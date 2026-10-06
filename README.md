@@ -1,2 +1,3 @@
 Colección de algoritmos, pruebas estadísticas y modelos de programación lineal desarrollados en R y Python para la resolución de problemas actuariales, valuación financiera y optimización de recursos.
-Análisis Numérico y Optimización: Implementación algorítmica del Método de Newton-Raphson para la aproximación de raíces en funciones no lineales complejas. El código incluye la programación de funciones base y sus derivadas, así como estructuras de control iterativo basadas en márgenes de tolerancia estricta 10^(-4)
+
+Análisis Numérico y Optimización: (P5 Metodo de Newtoom.rmd) Implementación algorítmica del Método de Newton-Raphson para la aproximación de raíces en funciones no lineales complejas.
