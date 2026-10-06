@@ -1,0 +1,194 @@
+---
+title: "Curvas de Densidad"
+author: "David Nexticapan Cortes"
+date: "2025-07-18"
+output: html_document
+---
+
+
+
+''''''''''''''''''''''''''''''''''''''''''''
+Cargamos librerías
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(readxl)
+library(patchwork)
+```
+
+Utilizamos nuestros datos que siguen una distribución $Gamma(\alpha = 2, \beta=1)$
+```{r}
+set.seed(123)
+valores_continuos <- rgamma(n = 1000, shape = 2, scale = 1)
+df_continuos <- data.frame(datos = valores_continuos)
+summary(df_continuos)
+
+```
+
+# **Curvas de densidad Empírica y Teórica**
+
+La curva de densidad es una estimación suave de la distribución de probabilidad de un conjunto de datos continuos. A diferencia de un histograma, que agrupa los datos en intervalos y cuenta la frecuencia de ocurrencia dentro de cada intervalo, la curva de densidad proporciona una representación continua de cómo se distribuyen los datos a lo largo de su rango.
+
+La estimación suave se refiere a una técnica utilizada en estadística para crear una representación continua y sin saltos de la distribución de datos, especialmente cuando esos datos están agrupados en intervalos.
+
+```{r}
+ggplot(df_continuos, aes(x = valores_continuos)) +
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", bins = 30) +
+  geom_density(color = "blue", linewidth = 1.2) + # Curva de densidad empírica.
+  stat_function(fun = dgamma, args = list(shape = 2, scale = 1), color = "red", linewidth = 1) + # Curva de densidad teórica.
+  labs(title = "Histograma de Densidad Empírica y Teórica", x = "Valores", y = "Densidad") +
+  theme_dark()
+```
+
+Lineas de Densidad con la Regla de Sturges
+Tarea: Realizar tres gráficos con ggplot donde ocupes las reglas para los bins: Sturges, Scott y FD
+```{r}
+# Aplicamos la reglas de bins
+k_sturges <- nclass.Sturges(valores_continuos)
+k_scott <- nclass.scott(valores_continuos)
+k_freedman <- nclass.FD(valores_continuos)
+
+k_sturges
+k_scott
+k_freedman
+
+g_sturges<-ggplot(df_continuos, aes(x = valores_continuos)) +
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", bins = 11) +
+  geom_density(color = "blue", linewidth = 1.2) + # Curva de densidad empírica.
+  stat_function(fun = dgamma, args = list(shape = 2, scale = 1), color = "red", linewidth = 1) + # Curva de densidad teórica.
+  labs(title = "Sturges", x = "Valores", y = "Densidad") +
+  theme_dark()
+
+g_scott<-ggplot(df_continuos, aes(x = valores_continuos)) +
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", bins = 19) +
+  geom_density(color = "blue", linewidth = 1.2) + # Curva de densidad empírica.
+  stat_function(fun = dgamma, args = list(shape = 2, scale = 1), color = "red", linewidth = 1) + # Curva de densidad teórica.
+  labs(title = "Scott", x = "Valores", y = "Densidad") +
+  theme_dark()
+
+g_freedman<-ggplot(df_continuos, aes(x = valores_continuos)) +
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", bins = 28) +
+  geom_density(color = "blue", linewidth = 1.2) + # Curva de densidad empírica.
+  stat_function(fun = dgamma, args = list(shape = 2, scale = 1), color = "red", linewidth = 1) + # Curva de densidad teórica.
+  labs(title = "Freedman", x = "Valores", y = "Densidad") +
+  theme_dark()
+(g_scott|g_sturges)/g_freedman
+```
+
+# **Histogramas para Distribuciones Discretas**
+
+```{r}
+set.seed(123)
+valores_binom <- rbinom(n = 10000, size = 10, prob = 0.3)
+# Colcamos los datos en un data.frame
+datos_discretos <- data.frame(datos = valores_binom)
+
+# PREPARACIÓN DE DATOS EMPÍRICOS
+tabla_frecuencias <- as.data.frame(table(datos_discretos$datos)/10000)
+colnames(tabla_frecuencias) <- c("valor", "frecuencia")
+tabla_frecuencias$valor <- as.numeric(as.character(tabla_frecuencias$valor))
+
+# PREPARACIÓN DE DATOS TEÓRICOS
+x_values <- min(tabla_frecuencias$valor):max(tabla_frecuencias$valor)
+y_values <- dbinom(x_values, size = 10, prob = 0.3)
+tabla_teorica <- data.frame(valor = x_values, frecuencia = y_values)
+
+ggplot() +
+  geom_segment(data = tabla_frecuencias, aes(x = valor, y = frecuencia, xend = valor, yend = 0), color = "steelblue", size = 4) +
+  geom_segment(data = tabla_teorica, aes(x = valor, y = frecuencia, xend = valor, yend = 0), color = "red3", size = 2)
+```
+
+
+## **Problema de los autos (Tiempos de Interarribo)**
+
+Se recopilaron datos sobre el tiempo de arribo ($X_i$  en minutos) entre autos que llegaron a una instalación bancaria con servicio de autos. Durante un intervalo fijo de 90 minutos, llegaron 220 autos y se registraron los tiempos de interarribo consecutivos entre los autos $i$ y $i+1$, para $i=1,2,…,219$. Los datos fueron ordenados de menor a mayor y resumidos en la siguiente tabla. 
+
+Importamos la base de datos
+```{r}
+df_tiempos <- read_excel("tiempos.xlsx")
+head(df_tiempos)
+```
+
+Realizamos un análisis preliminar de la base de datos.
+```{r}
+summary(df_tiempos) # Pudieramos decir que es sesgada a la derecha o izquierda?
+hist(df_tiempos$tiempos, probability = T) # ¿Pudieramos pensar que siguen una distribución exponencial?
+
+```
+
+Creamos tres histogramas con diferentes anchos de intervalos ∆b por ejemplo 0.05,0.075,0.1 y tres histogramas con bins aplicando las reglas. Cada histograma con su curva de densidad empírica.
+
+```{r}
+g1 <- ggplot(data = df_tiempos, aes(x = tiempos)) + 
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", binwidth = 0.05) +
+  geom_density(color = "blue", linewidth = 1.2) +
+  labs(title = "Distribución Tiempos Interarribo ∆b = 0.05", x = "Tiempos", y = "Densidad") +
+  theme_minimal()
+
+g2 <- ggplot(data = df_tiempos, aes(x = tiempos)) + 
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", binwidth = 0.075) +
+  geom_density(color = "blue", linewidth = 1.2) +
+  labs(title = "Distribución Tiempos Interarribo ∆b = 0.075", x = "Tiempos", y = "Densidad") +
+  theme_minimal()
+
+g3 <- ggplot(data = df_tiempos, aes(x = tiempos)) + 
+  geom_histogram(aes(y = after_stat(density)), fill = "skyblue", color = "black", binwidth = 0.10) +
+  geom_density(color = "blue", linewidth = 1.2) +
+  labs(title = "Distribución Tiempos Interarribo ∆b = 0.10", x = "Tiempos", y = "Densidad") +
+  theme_minimal()
+
+# Aplicamos la reglas de bins
+k_sturges <- nclass.Sturges(df_tiempos$tiempos)
+k_scott <- nclass.scott(df_tiempos$tiempos)
+k_freedman <- nclass.FD(df_tiempos$tiempos)
+
+g4 <- ggplot(data = df_tiempos, mapping = aes(x = tiempos)) +
+  geom_histogram(aes(y = after_stat(density)) ,fill = "skyblue", color = "black", bins = k_sturges, alpha = 0.7) +
+  geom_density(color = "blue", linewidth = 1.2) +
+  labs(title = "Distribución Tiempos Interarribo Sturges", x = "Tiempos", y = "Densidad") +
+  theme_minimal()
+
+g5 <- ggplot(data = df_tiempos, mapping = aes(x = tiempos)) +
+  geom_histogram(aes(y = after_stat(density)) ,fill = "skyblue", color = "black", bins = k_scott, alpha = 0.7) +
+  geom_density(color = "blue", linewidth = 1.2) +
+  labs(title = "Distribución Tiempos Interarribo Scott", x = "Tiempos", y = "Densidad") +
+  theme_minimal()
+
+g6 <- ggplot(data = df_tiempos, mapping = aes(x = tiempos)) +
+  geom_histogram(aes(y = after_stat(density)) ,fill = "skyblue", color = "black", bins = k_freedman, alpha = 0.7) +
+  geom_density(color = "blue", linewidth = 1.2) +
+  labs(title = "Distribución Tiempos Interarribo FD", x = "Tiempos", y = "Densidad") +
+  theme_minimal()
+
+(g1 | g2 | g3) / (g4 | g5 | g6)
+```
+
+Los tiempos de interarribo pudieran seguir una distribución:
+  - Exponencial
+  - Weibull
+  - Gamma
+
+## **Problema de artículos demandados**
+
+La siguiente tabla muestra valores y las frecuencias para n = 156 observaciones sobre la cantidad de artículos demandados en una semana de un inventario durante un periodo de 3 años, organizados en orden ascendente.
+
+![Tabla](Tabla Problema2.jpg)
+
+```{r}
+cantidad_demandada <- c(0,1,2,3,4,5,6,7,8,9,10,11)
+frecuencias <- c(59,26,24,18,12,5,4,3,0,3,0,2)
+
+# Creamos un data.frame
+df_demandas <- data.frame(Cantidad = cantidad_demandada,
+                          Frecuencia = frecuencias)
+
+# Creamos un gráfico para la frecuencia empírica
+ggplot(data = df_demandas, mapping = aes(x = Cantidad, y = Frecuencia)) +
+  geom_segment(aes(xend = Cantidad, yend = 0), color = "skyblue", size = 3) + 
+  theme_minimal()
+
+# ¿Qué distribución de probabilidad pudiéramos hipotetizar que siguen nuestros datos?
+  # Geométrica
+  # Poisson
+
+```
+

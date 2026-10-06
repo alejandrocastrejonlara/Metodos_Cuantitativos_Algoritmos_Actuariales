@@ -1,0 +1,339 @@
+---
+title: "Funciones de distribución."
+author: "Castrejon Lara Cristian Alejandro, Ballesteros Ojeda, Maria Fernanda, Lopez Jimenez, Christian Jesus"
+date: "3/2/26"
+output: html_document
+---
+*Distribución Binomial*
+
+Imaginemos que una compañía de seguros estima que la probabilidad de que un cliente presente un reclamo en un año es del 10% (p=0.1). Si tienen 50 clientes (n=50).
+
+  a) ¿Cuál es la probabilidad de que exactamente 5 clientes presenten un reclamo?
+```{r}
+dbinom(5,50,0.1)
+```
+
+  b) ¿Cuál es la probabilidad de que 3 o menos clientes presenten un reclamo?
+```{r}
+pbinom(3,50,0.1)
+```
+
+  c) Simular el número de reclamos para 10 años (10 simulaciones)
+```{r}
+rbinom(10,50, 0.1)
+
+```
+
+  d) ¿Cuál es el número máximo de reclamos esperado tal que la probabilidad de observarlos o menos sea del 95%?
+```{r}
+qbinom(.95, 50, 0.1)
+```
+
+  e) Simular el número de reclamos que se presentarían en 1,000 periodos anuales (es decir, 1,000 "años" simulados para esta cartera de clientes).
+```{r}
+sim_binom<-rbinom(1000,50,0.1)
+head(sim_binom)
+```
+
+Problema 2 (TAREA): En una encuesta, el 70% de los clientes de una tienda reportan estar satisfechos con el servicio. Si seleccionamos aleatoriamente n = 20 clientes:
+
+  a. Calcular la probabilidad de que exactamente 15 clientes estén satisfechos.
+```{r}
+dbinom(15,size = 20, prob = 0.7)
+```
+  b. Calcular la probabilidad de que al menos 18 clientes estén satisfechos.
+```{r}
+1 - pbinom(17,size = 20, prob = 0.7)
+```
+  c. Determinar el número mínimo de clientes satisfechos que representan el 80% más bajo de la distribución.
+```{r}
+qbinom(.8, size = 20, prob = .7)
+```  
+d. Genera 1000 datos empíricos y grafica la distribución empírica y teórica en un solo gráfico.
+```{r}
+v_empiricos <- rbinom(1000,size = 20, prob = .7)
+
+# Creamos un data frame con estos valores empíricos
+df_empirico <- as.data.frame(table(v_empiricos) / 1000)
+colnames(df_empirico) <- c("reclamaciones_por_incendio_al_mes", "Frecuencia")
+df_empirico$reclamaciones_por_incendio_al_mes <- as.numeric(as.character(df_empirico$reclamaciones_por_incendio_al_mes))
+
+# Creamos un dataframe con datos teóricos.
+x_valores <- 0:max(v_empiricos)
+y_valores <- dbinom(x_valores,size = 20, prob = .7)
+df_teorico <- data.frame(reclamaciones_por_incendio_al_mes = x_valores, Frecuencia = y_valores)
+
+# Graficamos usando ggplot2
+ggplot() +
+  geom_col(data = df_empirico, aes(x = reclamaciones_por_incendio_al_mes, y = Frecuencia), fill = "steelblue") + 
+  geom_segment(data = df_teorico, aes(x = reclamaciones_por_incendio_al_mes, xend = reclamaciones_por_incendio_al_mes, y = 0, yend = Frecuencia), color = "red", linewidth = 3)
+``` 
+
+Problema 3: Imagina que participas en un juego de apuestas donde inicias con $5 y en cada ronda lanzas una moneda justa. Si cae cara, ganas $1, pero si cae cruz, pierdes $1. El juego continúa hasta que tu dinero se reduzca a $0 o alcance los $10, momento en el que te retiras. Se lleva un registro del dinero en cada tirada y, al finalizar, se grafica su evolución para analizar cómo fluctúa tu capital a lo largo del juego. ¿Hasta dónde llegará tu suerte antes de que el juego termine?
+
+``` {r}
+#Valor inicial del juego
+dinero <- 5
+
+#Vectores para registrar nuestros resultados
+vector_dinero <- numeric()
+vector_dinero[1] <- dinero
+
+#Generamos nuestra caminata aleatoria
+i <- 2
+
+while(dinero > 0 & dinero < 10){
+  resultado_moneda<-rbinom(n=1,size=1,prob=0.5)
+  
+  if(resultado_moneda==0){
+    dinero <- dinero-1
+  }else{
+    dinero<-dinero+1
+  }
+  vector_dinero[i]<-dinero
+  #para que vaya avanzando y no se quede en i=2
+  i<-i+1
+}
+
+
+df_Lanzamientos <-data.frame(Lanzamiento=0:(length(vector_dinero)-1),dinero=vector_dinero)
+
+library(ggplot2)
+ggplot(data=df_Lanzamientos,aes(x=Lanzamiento,y=dinero)) +
+  geom_line(color="blue",  linewidth=1.5)+
+  geom_point(color="red", size=2,shape=15)+
+  scale_x_continuous(breaks=seq(0,max(df_Lanzamientos$Lanzamiento)))
+``` 
+
+
+
+*Distribución Geométrica*
+
+Problema 4: Una empresa de control de calidad sabe que el 2% de los productos tienen un defecto (p=0.02). Quieren saber cuántos productos no defectuosos encontrarán antes de dar con el primer producto defectuoso.
+
+  a) ¿Cuál es la probabilidad de encontrar exactamente 0 productos no defectuosos antes del primer defectuoso (es decir, el primer producto es defectuoso)?
+```{r}
+dgeom(x = 0, prob = 0.02)
+```
+
+  b) ¿Cuál es la probabilidad de encontrar 50 o menos productos no defectuosos antes del primer defectuoso?
+```{r}
+pgeom(q= 50, prob = 0.02)
+```
+
+  c) Simular cuántos productos no defectuosos se encuentran antes del primer defectuoso en 5 escenarios:
+```{r}
+simulaciones<-rgeom(n = 1000, prob = 0.02)
+hist(simulaciones, breaks=30)
+```
+
+  d) ¿Cuántos fallos (productos no defectuosos) deben ocurrir para que la probabilidad de encontrar el primer éxito sea del 99%?
+```{r}
+qgeom(p = 0.99, prob = 0.02)
+```
+
+```{r}
+#Generamos nuestros valores aleatorios "empiricos"
+v_empiricos <- rgeom(n=1000, prob=0.2)
+
+#Creamos un data frame con estos valores empiricos
+df_empirico<-as.data.frame(table(v_empiricos)/1000)
+colnames(df_empirico)<- c("productos_no_defectuosos", "Frecuencia")
+df_empirico$productos_no_defectuosos<- as.numeric(as.character(df_empirico$productos_no_defectuosos))
+
+
+#Creamos un data frame con datos teoricos
+x_valores<-0:max(v_empiricos)
+y_valores<-dgeom(x_valores, prob=0.2)
+df_teorico<-data.frame(productos_no_defectuosos = x_valores, Frecuencia = y_valores)
+
+
+#Graficamos usando ggplot2
+ggplot()+
+  geom_col(data=df_empirico, aes(x=productos_no_defectuosos, y=Frecuencia),fill="steelblue")+
+  geom_segment(data=df_teorico, aes(x=productos_no_defectuosos, xend=productos_no_defectuosos, y=0, yend= Frecuencia),color="red", linewidth=1.5)
+```
+  
+Problema 5 TAREA: Una compañía de seguros está revisando el historial de reclamaciones de un cliente para determinar el número de años que pasarán hasta que el cliente presente su próxima reclamación. Con base en datos históricos, se sabe que la probabilidad de que un cliente presente una reclamación en un año dado es del 30%. Supongamos que los años son independientes entre sí.
+
+  a) ¿Cuál es la probabilidad de que el cliente presente su primera reclamación en el tercer año?
+```{r}
+dgeom(x = 2, prob = 0.3)
+```
+
+  b) ¿Cuál es la probabilidad de que el cliente presente su primera reclamación antes del cuarto año (es decir, en el año 1, 2 o 3)?
+```{r}
+pgeom( q = 2, prob = 0.3) #acumulada
+dgeom(x = 0, prob = 0.3) + dgeom(x = 1, prob = 0.3)+ dgeom(x = 2, prob = 0.3)
+ 
+```
+
+c) ¿Cuál es la probabilidad de que el cliente no presente su primera reclamación en los primeros 4 años?
+```{r}
+1 - pgeom(q = 3, p = 0.3 )
+```
+
+d) ¿Cuál es la probabilidad de que el cliente presente su primera reclamación entre el tercer y el sexto año (ambos inclusive)?
+
+```{r}
+dgeom(x = 2, prob = 0.3)+dgeom(x = 3, prob = 0.3)+dgeom(x = 4, prob = 0.3)+dgeom(x = 5, prob = 0.3)
+pgeom(q = 5, p = 0.3 ) - pgeom(q = 1, p = 0.3)
+```
+
+
+**Distribución Binomial Negativa**
+
+Problema 6: Una compañía de seguros está revisando reclamaciones para detectar fraude. Se sabe que el 5% de las reclamaciones presentan fraude, y las revisiones se realizan de forma independiente.
+
+a) ¿Cuál es la probabilidad de que se detecten 2 fraudes después de revisar 20 reclamaciones?
+```{r}
+dnbinom(x = 18, size = 2, prob = 0.05)
+
+```
+
+b) ¿Cuál es la probabilidad de que se detecten 2 fraudes después de revisar a lo sumo 30 reclamaciones?
+```{r}
+pnbinom(q = 28, size = 2, prob = 0.05)
+
+```
+
+c) ¿Cuál es la probabilidad de que se necesiten revisar más de 25 reclamaciones para detectar 2 fraudes?
+```{r}
+1- pnbinom(q = 23, size = 2, prob = 0.05)
+```
+
+d) ¿Cuál es la probabilidad de que se necesiten revisar entre 30 y 50 reclamaciones (ambas inclusive) para detectar los 2 fraudes?
+```{r}
+pnbinom(q = 48, size= 2, prob= 0.05) - pnbinom(q = 27, size= 2, prob= 0.05)
+```
+
+e) Grafica la distribución Teórica
+```{r}
+library(ggplot2)
+
+# Generamos nuestros valores aleatorios "empíricos"
+v_empiricos <- rnbinom(n=10000,2,.05)
+
+# Creamos un data frame con estos valores empíricos
+df_empirico <- as.data.frame(table(v_empiricos) / 10000)
+colnames(df_empirico) <- c("fraudes_por_reclamacion", "Frecuencia")
+df_empirico$fraudes_por_reclamacion <- as.numeric(as.character(df_empirico$fraudes_por_reclamacion))
+
+# Creamos un dataframe con datos teóricos.
+x_valores <- 0:max(v_empiricos)
+y_valores <- dnbinom(x_valores,2, prob = 0.05)
+df_teorico <- data.frame(fraudes_por_reclamacion = x_valores, Frecuencia = y_valores)
+
+# Graficamos usando ggplot2
+ggplot() +
+  #geom_col(data = df_empirico, aes(x = fraudes_por_reclamacion, y = Frecuencia), fill = "steelblue") + 
+  geom_segment(data = df_teorico, aes(x = fraudes_por_reclamacion, xend = fraudes_por_reclamacion, y = 0, yend = Frecuencia), color = "red", linewidth = 1.5)
+
+```
+
+Problema 7 Tarea: Un equipo de desarrollo de software está probando un nuevo módulo. El equipo tiene como objetivo encontrar su tercer error (3 éxitos) para poder analizar un patrón de defectos. Basándose en la experiencia, la probabilidad de encontrar un error en una prueba individual de una sección de código es del 10% (0.10). Cada prueba es independiente.
+
+¿Cuál es la probabilidad de que se necesiten realizar exactamente 20 pruebas (exitosas o fallidas) para encontrar el tercer error?
+```{r}
+dnbinom(17,3,.1)
+```
+
+¿Cuál es la probabilidad de que se necesiten realizar 25 pruebas o menos para encontrar el tercer error?
+```{r}
+pnbinom(22,3,.1)
+```
+
+¿Cuál es la probabilidad de que se necesiten realizar más de 30 pruebas para encontrar el tercer error?
+```{r}
+1-pnbinom(27,3,.1)
+```
+
+**Distribución Poisson**
+
+Problema 8: En una tienda de autoservicio, se observa que en promedio se reciben 4 clientes por hora que compran un producto específico. Queremos calcular la probabilidad de que en una hora se reciban exactamente 6 clientes.
+
+  a) ¿Cuál es la probabilidad de que lleguen exactamente 6 clientes en una hora?
+```{r}
+dpois(6,4)
+```
+
+  b) ¿Cuál es la probabilidad de que lleguen 3 o menos clientes en una hora?
+```{r}
+ppois(3,4)
+```
+  
+  ¿Cuál es la probabilidad de que lleguen más de 5 clientes en una hora?
+```{r}
+1-ppois(5,4)
+```
+  
+  ¿Cuál es el número máximo de clientes que se espera recibir en una hora con una probabilidad acumulada del 90%?
+```{r}
+qpois(.9,4)
+#ppois(7,4) comprobacion
+```
+  c) Simula el número de clientes que llegan por hora durante 1000 horas y grafica la distribución empírica de clientes junto con la distribución teórica.
+```{r}
+library(ggplot2)
+
+# Generamos nuestros valores aleatorios "empíricos"
+v_empiricos <- rpois(1000,4)
+
+# Creamos un data frame con estos valores empíricos
+df_empirico <- as.data.frame(table(v_empiricos) / 1000)
+colnames(df_empirico) <- c("clientes_por_hora", "Frecuencia")
+df_empirico$clientes_por_hora <- as.numeric(as.character(df_empirico$clientes_por_hora))
+
+# Creamos un dataframe con datos teóricos.
+x_valores <- 0:max(v_empiricos)
+y_valores <- dpois(x_valores,4)
+df_teorico <- data.frame(clientes_por_hora = x_valores, Frecuencia = y_valores)
+
+# Graficamos usando ggplot2
+ggplot() +
+  geom_col(data = df_empirico, aes(x = clientes_por_hora, y = Frecuencia), fill = "steelblue") + 
+  geom_segment(data = df_teorico, aes(x = clientes_por_hora, xend = clientes_por_hora, y = 0, yend = Frecuencia), color = "red", linewidth = 3)
+```
+
+Problema 9 Tarea: Una compañía de seguros ha observado que el número de reclamaciones por incendios en propiedades residenciales sigue una distribución de Poisson. Con base en datos históricos de una cartera específica de pólizas, la compañía ha determinado que se reciben, en promedio, 2.5 reclamaciones por incendio al mes.
+
+a) ¿Cuál es la probabilidad de que se reciban exactamente 3 reclamaciones por incendio en el próximo mes?
+
+```{r}
+dpois(3,2.5)
+```
+
+b) ¿Cuál es la probabilidad de que se reciban 2 o menos reclamaciones por incendio en el próximo mes?
+
+```{r}
+ppois(2,2.5)
+```
+
+c) ¿Cuál es la probabilidad de que se reciban más de 4 reclamaciones por incendio en el próximo mes?
+
+```{r}
+1-ppois(4,2.5)
+```
+
+d) Grafica la densidad teórica.
+```{r}
+library(ggplot2)
+
+# Generamos nuestros valores aleatorios "empíricos"
+v_empiricos <- rpois(1000,2.5)
+
+# Creamos un data frame con estos valores empíricos
+df_empirico <- as.data.frame(table(v_empiricos) / 1000)
+colnames(df_empirico) <- c("reclamaciones_por_incendio_al_mes", "Frecuencia")
+df_empirico$reclamaciones_por_incendio_al_mes <- as.numeric(as.character(df_empirico$reclamaciones_por_incendio_al_mes))
+
+# Creamos un dataframe con datos teóricos.
+x_valores <- 0:max(v_empiricos)
+y_valores <- dpois(x_valores,2.5)
+df_teorico <- data.frame(reclamaciones_por_incendio_al_mes = x_valores, Frecuencia = y_valores)
+
+# Graficamos usando ggplot2
+ggplot() +
+  geom_col(data = df_empirico, aes(x = reclamaciones_por_incendio_al_mes, y = Frecuencia), fill = "steelblue") + 
+  geom_segment(data = df_teorico, aes(x = reclamaciones_por_incendio_al_mes, xend = reclamaciones_por_incendio_al_mes, y = 0, yend = Frecuencia), color = "red", linewidth = 3)
+```
