@@ -1,0 +1,256 @@
+---
+title: "Sesión 17 y 18 Selección de Distribuciones"
+author: "David Nexticapan Cortes"
+date: "2025-09-24"
+output: html_document
+---
+Después de que se haya hipotetizado una o más familias candidatas de distribuciones en los problemas anteriores, debemos especificar de alguna manera los valores de sus parámetros para tener distribuciones completamente especificadas para su posible uso en la simulación. Consideraremos explícitamente solo un tipo, los estimadores de máxima verosimilitud.
+
+## **Problema de los autos (Tiempos de Interarribo)**
+
+Se recopilaron datos sobre el tiempo de arribo ($X_i$  en minutos) entre autos que llegaron a una instalación bancaria con servicio de autos. Durante un intervalo fijo de 90 minutos, llegaron 220 autos y se registraron los tiempos de interarribo consecutivos entre los autos $i$ y $i+1$, para $i=1,2,…,219$. Los datos fueron ordenados de menor a mayor y resumidos en la siguiente tabla. 
+
+Importamos la base de datos
+```{r}
+library(readxl)
+df_tiempos <- read_excel("tiempos.xlsx")
+head(df_tiempos)
+tail(df_tiempos)
+```
+
+Realizamos un análisis preliminar de la base de datos.
+```{r}
+library(ggplot2)
+ggplot(data = df_tiempos,aes(x = tiempos))+
+  geom_histogram(color = "black",fill = "skyblue",bins = 15,aes(y = after_stat(density)))+
+  geom_density(color = "blue",linewidth = 1.2)
+```
+
+**Distribución Exponencial**
+
+![](MLE Exponencial.jpg)
+
+```{r}
+# Aquí estamos usando el métood de máxima versosimilitud para sacar el parámetro y ver si nuestros datos se ajustan a una exponencial
+
+beta_hat <- mean(df_tiempos$tiempos)
+
+```
+
+```{r}
+ggplot(data = df_tiempos, aes(x = tiempos))+
+  geom_histogram(fill = "skyblue", color = "white", bins = 15, aes(y = after_stat(density)))+
+  geom_density(color = "blue3", linewidth = 1.2) +
+  stat_function(fun = dexp, args = list(rate = 1/beta_hat), color = "purple2", linewidth = 1.2)
+
+```
+
+**Distribución Weibull**
+
+![](MLE Weibull.jpg)
+
+```{r}
+# Metodo de Newton
+
+# Establecemos parametros
+x_i<-df_tiempos$tiempos
+n<-length(x_i)
+ln_x<-log(x_i)
+
+# Definir la funcion f(a^)
+fun<-function(a){
+  x_a<-x_i^a  
+  return(1/a + sum(ln_x)/n - sum(x_a *ln_x)/sum(x_a))
+}
+
+# Definimos a la derivada de la funcion
+derivada<-function(a){
+  x_a<-x_i^a
+  factor1<- - 1/(a^2)
+  factor2<- - sum(x_a * ln_x ^ 2) / sum(x_a)
+  factor3<- (sum(x_a * ln_x) / sum(x_a)) ^ 2
+  return(factor1+factor2+factor3)
+}
+
+# Aproximacion inicial
+p_0<-1
+f_p0<-fun(p_0)
+df_p0<-derivada(p_0)
+
+# Declarar un margen de tolerancia
+tol<- 0.00001
+
+# Declaramos un contador
+contador<- 1
+
+cat("Iteracion:",contador,"\t a",p_0, "\t |f(a)|",abs(f_p0),"\n")
+
+# Generamos un bucle para el proceso de iteracion
+
+while(abs(f_p0)>tol){
+  contador<- contador + 1
+  p_1<-p_0 - (f_p0 / df_p0)
+  f_p1<- fun(p_1)
+  p_0<- p_1
+  f_p0<-fun(p_0)
+  df_p0<-derivada(p_0)
+  cat("Iteracion:",contador,"\t a",p_0, "\t |f(a)|",abs(f_p0),"\n")
+}
+
+# Concluimos el ejercicio:
+alpha_gorro<- 1.028714 
+beta_gorro<- (mean(x_i^alpha_gorro))^(1/alpha_gorro)
+
+```
+
+```{r}
+ggplot(data = df_tiempos,aes(x = tiempos))+
+  geom_histogram(color = "black",fill = "skyblue",bins = 15,aes(y = after_stat(density)))+
+  geom_density(color = "blue",linewidth = 1.2)+
+  stat_function(fun = dweibull,args = list(shape = 1.028714,scale = 0.4034752),color = "purple",linewidth = 1.2)+
+  stat_function(fun = dexp,args = list(rate = 1/beta_hat),color = "red",linewidth = 1.2)
+
+```
+
+```{r}
+ggplot(data = df_tiempos,aes(x = tiempos))+
+  geom_histogram(color = "black",fill = "skyblue",bins = 15,aes(y = after_stat(density)))+
+  geom_density(color = "blue",linewidth = 1.2)+
+  stat_function(fun = dweibull,args = list(shape = 1.028714,scale = 0.4034752),color = "purple",linewidth = 1.2)
+
+```
+
+# Problema 2
+
+![Tabla](Tabla Problema2.jpg)
+
+```{r}
+
+cantidad_demandada <- c(0,1,2,3,4,5,6,7,8,9,10,11)
+frecuencias <- c(59,26,24,18,12,5,4,3,0,3,0,2)
+
+df_demandas <- data.frame(Cantidad = cantidad_demandada,Frecuencia = frecuencias)
+
+ggplot(data = df_demandas,aes(x = Cantidad,y = Frecuencia))+
+  geom_segment(aes(xend = Cantidad,yend = 0),color = "blue",size = 3)
+```
+
+**Geométrica**
+![](MLE Geometrica.jpg)
+
+```{r}
+media_muestral <- sum(cantidad_demandada*frecuencias)/sum(frecuencias)
+media_muestral
+
+p_hat <- 1/(media_muestral+1)
+
+df_demanda_teorica <- data.frame(Cantidad = cantidad_demandada,Probabilidad = dgeom(cantidad_demandada,prob = p_hat))
+
+ggplot()+
+  geom_segment(data = df_demandas, aes(x = Cantidad,y =Frecuencia/sum(frecuencias),xend=Cantidad,yend =0 ),color = "skyblue",linewidth = 5)+
+  geom_segment(data = df_demanda_teorica, aes(x = Cantidad,y = Probabilidad,xend=Cantidad,yend =0 ),color = "red",linewidth = 3)
+
+```
+
+**Poisson**
+![](MLE Poisson.jpg)
+
+```{r}
+
+lambda_gorro <- media_muestral
+
+df_demanda_teorica <- data.frame(Cantidad = cantidad_demandada,Probabilidad = dpois(cantidad_demandada,lambda = lambda_gorro))
+head(df_demanda_teorica)
+
+ggplot()+
+  geom_segment(data = df_demandas, aes(x = Cantidad,y =Frecuencia/sum(frecuencias),xend=Cantidad,yend =0 ),color = "skyblue",linewidth = 5)+
+  geom_segment(data = df_demanda_teorica, aes(x = Cantidad,y = Probabilidad,xend=Cantidad,yend =0 ),color = "red",linewidth = 3)
+```
+
+```{r}
+# TAREA: juntar en un solo gráfico la distribución empiricas y las distribuciones teoricas (geometrica y Poisson)
+media_muestral <- sum(cantidad_demandada*frecuencias)/sum(frecuencias)
+media_muestral
+
+p_hat <- 1/(media_muestral+1)
+
+dfgeom_demanda_teorica <- data.frame(Cantidad = cantidad_demandada,Probabilidad = dgeom(cantidad_demandada,prob = p_hat))
+
+lambda_gorro <- media_muestral
+
+dfpois_demanda_teorica <- data.frame(Cantidad = cantidad_demandada,Probabilidad = dpois(cantidad_demandada,lambda = lambda_gorro))
+head(df_demanda_teorica)
+
+ggplot()+
+  geom_segment(data = df_demandas, aes(x = Cantidad,y =Frecuencia/sum(frecuencias),xend=Cantidad,yend =0 ),color = "skyblue",linewidth = 7)+
+  geom_segment(data = dfpois_demanda_teorica, aes(x = Cantidad,y = Probabilidad,xend=Cantidad,yend =0 ),color = "red",linewidth = 5)+
+  geom_segment(data = dfgeom_demanda_teorica, aes(x = Cantidad,y = Probabilidad,xend=Cantidad,yend =0 ),color = "yellow",linewidth = 3)
+  
+```
+
+Después de determinar una o más distribuciones de probabilidad que podría ajustarse a nuestros datos observados, ahora debemos examinar estas distribuciones detenidamente para evaluar qué tan bien representan la verdadera distribución subyacente de nuestros datos. Si varias de estas distribuciones son “representativas”, también debemos determinar cuál de ellas proporciona el mejor ajuste. Lo que realmente intentamos hacer es determinar una distribución que sea lo suficientemente precisa para los propósitos previstos del modelo.
+
+fitdist del paquete fitdistrplus en R sirve para ajustar distribuciones de probabilidad a un conjunto de datos.
+
+Su función principal es estimar los parámetros de una distribución teórica que mejor se ajustan a la distribución observada de tus datos. Esto lo hace utilizando diferentes métodos, siendo el más común y potente el de Máxima Verosimilitud (MLE).
+
+```{r, message=FALSE, warning=FALSE}
+# Tiempos de interarribo
+#install.packages("fitdistrplus")
+library(fitdistrplus)
+
+# Ajustamos los tiempos de interarribo
+ajuste_exponencial <- fitdist(data = df_tiempos$tiempos,distr = "exp",method = "mle")
+ajuste_exponencial$estimate # esto nos va a arrojar los parámetros estimados
+ajuste_exponencial$aic # Nos da el valor del AIC
+ajuste_exponencial$bic # Nos da el valor del BIC
+
+ajuste_weibull <- fitdist(data = df_tiempos$tiempos,distr = "weibull",method = "mle")
+ajuste_weibull$estimate
+
+ajuste_gamma <- fitdist(data = df_tiempos$tiempos,distr = "gamma",method = "mle")
+ajuste_gamma$estimate
+```
+
+El AIC busca un equilibrio entre la bondad de ajuste de un modelo a los datos (qué tan bien predice los valores observados) y la complejidad de ese modelo (cuántos parámetros utiliza).
+
+El modelo con el valor de AIC más bajo es el preferido. Esto se debe a que un AIC más bajo indica un mejor equilibrio entre un buen ajuste a los datos y una menor complejidad. Si un modelo tiene muchos parámetros, podría ajustarse "demasiado bien" al ruido de los datos (sobreajuste), lo que no es deseable. El AIC penaliza ese exceso de complejidad.
+
+```{r}
+cat("El AIC del ajuste exponencial es: ",ajuste_exponencial$aic,"\n")
+cat("El AIC del ajuste Weibull es: ",ajuste_weibull$aic,"\n")
+cat("El AIC del ajuste Gamma es: ",ajuste_gamma$aic,"\n")
+```
+
+```{r, warning=FALSE, message=FALSE}
+cantidades_expandidas <- rep(cantidad_demandada,times = frecuencias)
+cantidades_expandidas
+
+ajuste_geometrica <- fitdist(data = cantidades_expandidas,distr = "geom",method = "mle")
+ajuste_geometrica$estimate
+
+ajuste_poisson <- fitdist(data = cantidades_expandidas,distr = "pois",method = "mle")
+ajuste_poisson$estimate
+
+cat("El AIC del ajuste geometrica es: ",ajuste_geometrica$aic,"\n")
+cat("El AIC del ajuste poisson es: ",ajuste_poisson$aic,"\n")
+```
+
+```{r}
+# Tarea: reralizar el ajuste de los datos de la demanda a través de una distribución binomial
+cantidades_expandidas <- rep(cantidad_demandada,times = frecuencias)
+max_muestra<- max(cantidades_expandidas)
+
+
+ajuste_binomial <- fitdist(
+  cantidades_expandidas,
+  "binom",
+  method = "mle",
+  fix.arg = list(size = max_muestra),
+  start = list(prob = 0.5)
+)
+
+ajuste_binomial$estimate
+
+cat("El AIC del ajuste binomial es: ",ajuste_binomial$aic,"\n")
+```

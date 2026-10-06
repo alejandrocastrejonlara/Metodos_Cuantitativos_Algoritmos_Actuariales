@@ -1,0 +1,225 @@
+---
+title: "Sesión 19 Pruebas de Bondad de Ajuste"
+author: "David Nexticapan Cortes"
+date: ""
+output: html_document
+---
+
+'''''''''''''''''''''''''''''''''''''''''''''''''''
+Cargamos librerías
+```{r, message=FALSE, warning=TRUE}
+library(readxl)
+library(ggplot2)
+library(fitdistrplus)
+library(goftest)
+```
+
+
+## **Problema de los autos (Tiempos de Interarribo)**
+
+Importamos la base de datos
+```{r}
+df_tiempos <- read_excel("tiempos.xlsx")
+head(df_tiempos)
+```
+
+Paso 1: Análisis Exploratorio
+```{r}
+beta_hat <- mean(df_tiempos$tiempos)
+ggplot(data = df_tiempos, aes(x=tiempos)) +
+  geom_histogram(fill = "skyblue", color = "white", bins = 15, aes(y = after_stat(density)))+
+  geom_density( color = "blue3", linewidth = 1.2)+
+  stat_function(fun = dexp, args = list(rate = 1/beta_hat), color = "purple2", linewidth = 1.2)
+
+```
+
+Paso 2: Estimamos los parámetros de cada distribucion.
+```{r, message=FALSE, warning=FALSE}
+ajuste_exponencial <- fitdist(data = df_tiempos$tiempos, distr = "exp", method = "mle")
+ajuste_exponencial$estimate #Esto nos va a arrojar los parametros estimados
+ajuste_weibull <- fitdist(data = df_tiempos$tiempos, distr = "weibull", "mle")
+ajuste_weibull$estimate
+ajuste_gamma <- fitdist(df_tiempos$tiempos, "gamma", "mle")
+ajuste_gamma$estimate
+
+```
+
+Aplicamos la prueba de Kolmogorov Smirnov
+
+$H_0:$ Los $X_i$ son v.a. independientes con función de distribución $F$
+$H_1:$ Los $X_i$ no son v.a. independientes con función de distribución $F$
+
+```{r}
+#Ordenamos los datos de forma ascendente
+tiempos_ordenados <- sort(df_tiempos$tiempos)
+
+#Calculamos la distribucion empirica 
+n <- length(tiempos_ordenados)
+y_empirica <- (1:n)/n
+
+# Calculamos la distribucion Teorica
+lambda_gorro <- ajuste_exponencial$estimate
+y_teorica <- pexp(q = tiempos_ordenados, rate = lambda_gorro)
+
+#Conparamos las discrepancias absolutas 
+discrepancias <- abs(y_empirica - y_teorica)
+
+#Creamos un data frame con los resultados
+df_discrepancias <- data.frame(Datos = tiempos_ordenados, FAE = y_empirica, FAT = y_teorica, Discrepacias = discrepancias)
+
+#GRAFICAMOS LAS DISTRIBUCIONES ACUMULADAS 
+ggplot(df_discrepancias, aes(x =Datos ))+
+  geom_step(aes(y = FAE), color= "skyblue3")+
+  geom_step(aes(y=FAT), color = "red3")
+
+#Calculamos la maxima discrepancia 
+D<- max(discrepancias)
+D_critico <- 0.875897/sqrt(n)
+D<D_critico
+
+
+#DESICION: Como D =  0.04725306 < D_critico = 0.05918763 no se rechaza la hipotesis nula. 
+#Conclusion: Existe suficiente evidencia estadistica para sustentar la aseveracion de que los tiempos de interarribo siguen una distribucion exponencial con un nivel de confianza al 95%
+
+
+# TAREA: 
+  #EQUIPO 7: Realizar la prueba de Kolmogorov Smirnov hipotetizando que los datos siguen ua distribución Weibull
+#Equipo 12: Realizar la prueba de kolmogorov smirnov hipotetiznado que los datos siguen una distribucion GAMMA
+
+ks.test(df_tiempos$tiempos,"pexp",ajuste_exponencial$estimate)
+# Decisión: como p_value = 0.7124 > 0.05 no se rechaza la hipótesis nula
+# Conclusión: Exuiste suifciente evidencia estadística para sustentar la aseveración de que los tiempos de interarribo siguen una distribución exponencial con un nivel de confianza del 95%
+
+ks.test(df_tiempos$tiempos,"pweibull",ajuste_weibull$estimate["shape"],ajuste_weibull$estimate["scale"])
+# Como p-value = 0.4649 > 0.05 no s erechaza la estadística nula
+# Conclusión: Exuiste suifciente evidencia estadística para sustentar la aseveración de que los tiempos de interarribo siguen una distribución weibull con un nivel de confianza del 95%
+
+ks.test(df_tiempos$tiempos,"pgamma",ajuste_gamma$estimate["shape"],ajuste_gamma$estimate["rate"])
+# Como p-value = 0.468 > 0.05 no s erechaza la estadística nula
+# Conclusión: Exuiste suifciente evidencia estadística para sustentar la aseveración de que los tiempos de interarribo siguen una distribución Gamma con un nivel de confianza del 95%
+
+```
+
+Forma alternativa
+```{r, warning=FALSE, message=FALSE}
+ks.test(df_tiempos$tiempos, "pexp", ajuste_exponencial$estimate) 
+# Decision: Como p_value = 0.7124 > 0.05 no se rechaza la hipotesis nula.
+# Conclusión: Existe suficiente evidencia estadística para sustentar la aseveración de que los tiempos de interarribo siguen una distribución exponencial con un nivel de confianza al 95%
+
+ks.test(df_tiempos$tiempos, "pweibull", ajuste_weibull$estimate["shape"],ajuste_weibull$estimate["scale"]) 
+# Decision: Como p_value = 0.4649 > 0.05 no se rechaza la hipotesis nula.
+# Conclusión: Existe suficiente evidencia estadística para sustentar la aseveración de que los tiempos de interarribo siguen una distribución weibull con un nivel de confianza al 95%
+
+ks.test(df_tiempos$tiempos, "pgamma", ajuste_gamma$estimate["shape"],ajuste_gamma$estimate["rate"]) 
+# Decision: Como p_value = 0.4680 > 0.05 no se rechaza la hipotesis nula.
+# Conclusión: Existe suficiente evidencia estadística para sustentar la aseveración de que los tiempos de interarribo siguen una distribución gamma con un nivel de confianza al 95%
+```
+
+Aplicamos la prueba de Anderson Darling:
+
+```{r}
+library(goftest)
+
+ad_exponencial<- ad.test(df_tiempos$tiempos, "pexp",ajuste_exponencial$estimate)
+  cat("Distribucion Exponencial", "\n")
+if(ad_exponencial$p.value>0.05){
+  cat("Como p_value =",ad_exponencial$p.value, "es mayor que 0.05, no se rechaza la hipotesis nula","\n")
+} else{
+  cat("Como  p_value es menor que 0.05, se rechaza la hipotesis nula en favor de la alternativa","\n")
+}
+
+
+ad_weibull<- ad.test(df_tiempos$tiempos, "pweibull", ajuste_weibull$estimate["shape"],ajuste_weibull$estimate["scale"])
+cat("Distribucion Weibull", "\n")
+if(ad_weibull$p.value>0.05){
+  cat("Como p_value =",ad_weibull$p.value, "es mayor que 0.05, no se rechaza la hipotesis nula","\n")
+} else{
+  cat("Como  p_value es menor que 0.05, se rechaza la hipotesis nula en favor de la alternativa","\n")
+}
+
+####################Tarea: hacer la prueba para la gamma#############################
+ad_gamma<- ad.test(df_tiempos$tiempos, "pgamma", ajuste_gamma$estimate["shape"],ajuste_gamma$estimate["rate"])
+cat("Distribucion Gamma", "\n")
+if(ad_gamma$p.value>0.05){
+  cat("Como p_value =",ad_gamma$p.value, "es mayor que 0.05, no se rechaza la hipotesis nula","\n")
+} else{
+  cat("Como  p_value es menor que 0.05, se rechaza la hipotesis nula en favor de la alternativa","\n")
+}
+```
+
+Comparación de distribuciones:
+
+Para comparar distribuciones primero hay que ajustar cada una de las distribuciones candidata por separado. Una vez ajustadas, se pasan a la función gofstat() para obtener las métricas de cada una de ellas.
+
+```{r}
+comparacion<-gofstat(f = list(ajuste_exponencial, ajuste_weibull, ajuste_gamma))
+comparacion
+```
+
+Los valores de Kolmogorov-Smirnov, Cramer-von Mises y Anderson-Darling indican qué tan bien se ajusta cada distribución a los datos. Valores más pequeños indican mejor ajuste.
+
+En este caso, la distribución exponencial tiene valores menores en todas las pruebas en comparación con la Weibull, lo que sugiere que se ajusta mejor.
+
+AIC (Akaike's Information Criterion): Estima la calidad relativa de un modelo, como una estimación de la información perdida.
+
+BIC (Bayesian Information Criterion): Se basa en principios bayesianos; favorece modelos más parsimoniosos (simples).
+
+El objetivo es seleccionar el modelo con el menor valor de AIC o BIC. Un valor más bajo indica un modelo superior, ya que logra un buen ajuste con la menor complejidad posible.
+
+Con base en estos resultados, la distribución exponencial se ajusta mejor a los tiempos de interarribo que la Weibull y la Gamma, ya que tiene valores menores en todas las métricas de ajuste. 
+
+```{r, message=FALSE, warning=FALSE}
+library(actuar)
+
+#Datos para este ejemplo.
+set.seed(42)
+datos_ejemplo<- rgamma(n=200, shape = 2, rate = 0.5)
+
+#Realizamos una lista de distribuciones a probar
+distribuciones_a_probar<-c("norm", "lnorm", "weibull", "gamma", "exp", "logis", "cauchy")
+
+# Crear una lista vacia para almacenar los resultados del ajuste
+resultados_ajuste <-list()
+
+# Generamos un bulce para ajustar y guardar lo de cada distribucion
+for (dist in distribuciones_a_probar){
+  ajuste<- fitdist(datos_ejemplo,dist, method = "mle")
+  resultados_ajuste[[dist]]<-ajuste
+}
+
+gofstat(resultados_ajuste, fitnames = distribuciones_a_probar)
+
+```
+
+Caso discreto:
+```{r}
+cantidad<- c(0,1,2,3,4,5,6,7,8,9,10,11)
+Frecuencia<- c(59,26,24,18,12,5,4,3,0,3,0,2)
+
+datos_discretos_desagrupados<- rep(cantidad, Frecuencia)
+
+#Calculamos parametros basicos
+media_muestra<- mean(datos_discretos_desagrupados)
+varianza_muestra<- var(datos_discretos_desagrupados)
+max_muestra<- max(datos_discretos_desagrupados)
+
+distribuciones_a_probar<-c("pois", "geom", "nbinom", "binom")
+resultados_ajuste<-list()
+
+# Ajuste Poisson
+ajuste_poisson<-fitdist(datos_discretos_desagrupados, "pois", method = "mle")
+resultados_ajuste[["poisson"]]<- ajuste_poisson
+
+ajuste_geometrica<-fitdist(datos_discretos_desagrupados, "geom", method = "mle")
+resultados_ajuste[["geometrica"]]<- ajuste_geometrica
+
+ajuste_nbinom<-fitdist(datos_discretos_desagrupados, "nbinom", method = "mle")
+resultados_ajuste[["nbinom"]]<- ajuste_nbinom
+
+ajuste_binomial<-fitdist(datos_discretos_desagrupados, "binom", method = "mle", fix.arg = list(size = max_muestra), start = list(prob = 0.5))
+resultados_ajuste[["binomial"]]<- ajuste_binomial
+
+gofstat(resultados_ajuste, fitnames = c("Poisson", "Geometrica", "binomial N", "Binomial"))
+
+```
+
