@@ -1,0 +1,159 @@
+---
+title: "Metodo de Aceptacion-Rechazo"
+author: "Cristian Alejandro Castrejon Lara"
+date: "2026-04-28"
+output: html_document
+---
+**Ejemplo 1**
+```{r}
+f_densidad<- function(x){
+  12 * x * (1 - x) ^ 2
+}
+
+M<- function(x){ #Funcion mayorante
+  16/9
+}
+c<- 16/9
+
+n<- 10000 #Numero de simulaciones
+
+X <- numeric()
+
+set.seed(123)
+
+for(i in 1:n){
+  repeat{
+    Y<- runif(n = 1, 0, 1)
+    U<- runif(n = 1, 0, 1)
+    if (U <= f_densidad(Y) / M(Y)){
+      X[i]<- Y
+      break
+    }
+  }
+}
+
+head(X)
+
+hist(X,
+     probability = T,
+     col = "pink",
+     border = "black",
+     main = "Simulacion de X")
+lines(density(X), col = "purple", lwd = 3)
+curve (f_densidad, col = "cyan", add = T, lwd = 3)
+```
+
+**Ejemplo 2**
+```{r}
+-sin(pi/2)
+
+f_densidad<- function(x){
+  sin(x)
+}
+
+M<- function(x){ #Funcion mayorante
+  1
+}
+c<- pi / 2
+
+n<- 10000 #Numero de simulaciones
+
+X <- numeric()
+
+set.seed(123)
+
+for(i in 1:n){
+  repeat{
+    Y<- runif(n = 1, 0, pi/2)
+    U<- runif(n = 1, 0, 1)
+    if (U <= f_densidad(Y) / M(Y)){
+      X[i]<- Y
+      break
+    }
+  }
+}
+
+head(X)
+
+hist(X,
+     probability = T,
+     col = "pink",
+     border = "black",
+     main = "Simulacion de X")
+lines(density(X), col = "purple", lwd = 3)
+curve (f_densidad, col = "cyan", add = T, lwd = 3)
+
+```
+**Ejemplo 3**
+# Calculamos el punto critico por el metodo de newton
+```{r}
+fun1<- function(x){
+  300 * (x^4) - 480 * (x^3) + 180 * (x^2)  
+}
+
+derivada1<- function(x){
+  1200 * (x^3) - 1440 * (x^2) + 360 * (x)  
+}
+
+a<- 0 # Limite Inferior
+b<- 1 # Limite Superior
+p_n<- (a+b)/2
+f_p_n<- fun1(p_n)
+d_p_n<- derivada1(p_n)
+
+tol<- 0.00001
+contador<- 1
+
+resultados<- data.frame(iteracion = contador,
+                        p_n = p_n,
+                        Abs_f_p_n = abs(f_p_n))
+while(abs(f_p_n)>tol){
+  contador<- contador +1
+  p_n<- p_n - (f_p_n / d_p_n)
+  f_p_n<- fun1(p_n)
+  d_p_n<- derivada1(p_n)
+  resultados<- rbind(resultados, data.frame(iteracion = contador,
+                        p_n = p_n,
+                        Abs_f_p_n = abs(f_p_n)))
+}
+
+```
+
+```{r}
+f_densidad<- function(x){
+  60 * (x ^ 3) * (1 - x) ^ 2
+}
+
+M<- function(x){ #Funcion mayorante
+  2.073
+}
+c<- 2.073
+
+n<- 10000 #Numero de simulaciones
+
+X <- numeric()
+
+set.seed(123)
+
+for(i in 1:n){
+  repeat{
+    Y<- runif(n = 1, 0, 1)
+    U<- runif(n = 1, 0, 1)
+    if (U <= f_densidad(Y) / M(Y)){
+      X[i]<- Y
+      break
+    }
+  }
+}
+
+head(X)
+
+hist(X,
+     probability = T,
+     col = "pink",
+     border = "black",
+     main = "Simulacion de X")
+lines(density(X), col = "purple", lwd = 3)
+curve (f_densidad, col = "cyan", add = T, lwd = 3)
+
+```
